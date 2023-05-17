@@ -8,6 +8,8 @@
 #include <iomanip>
 #include <sstream>
 
+#include <fstream>
+
 using boost::asio::ip::tcp;
 
 // Identificador de mensagens
@@ -54,6 +56,39 @@ std::time_t string_to_time_t(const std::string& time_string) {
     return std::mktime(&tm);
 }
 
+void saveRecord(std::string fileName, LogRecord rec){
+  // Abre o arquivo para leitura e escrita em modo binário e coloca o apontador do arquivo
+	// apontando para o fim de arquivo
+	std::fstream file(fileName, std::fstream::out | std::fstream::in | std::fstream::binary 
+																	 | std::fstream::app); 
+	// Caso não ocorram erros na abertura do arquivo
+	if (file.is_open())
+	{
+		// Imprime a posição atual do apontador do arquivo (representa o tamanho do arquivo)
+		int file_size = file.tellg();
+
+		// Recupera o número de registros presentes no arquivo
+		int n = file_size/sizeof(LogRecord);
+		std::cout << "Num records: " << n << " (file size: " << file_size << " bytes)" << std::endl;
+
+		// Escreve registros no arquivo
+		file.write((char*)&rec, sizeof(LogRecord));
+		
+		// Imprime a posição atual do apontador do arquivo (representa o tamanho do arquivo)
+		file_size = file.tellg();
+    // Recupera o número de registros presentes no arquivo
+		n = file_size/sizeof(LogRecord);
+		std::cout << "Num records: " << n << " (file size: " << file_size << " bytes)" << std::endl;
+		
+    // Fecha o arquivo
+		file.close();
+	}
+	else
+	{
+		std::cout << "Error opening file!" << std::endl;
+	}
+}
+
 class session
   : public std::enable_shared_from_this<session>
 {
@@ -89,6 +124,9 @@ private:
               dataLog.timestamp = string_to_time_t(dataMessage[2]);
               dataLog.value = std::stod(dataMessage[3]);
               std::cout << "e o seu valor é  " << dataLog.value << std::endl;
+              
+              std::string filename = dataMessage[1] + ".dat";
+              saveRecord(filename, dataLog);
             }
             write_message(message);
           }
