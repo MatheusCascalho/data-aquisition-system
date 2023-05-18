@@ -74,13 +74,7 @@ void saveRecord(std::string fileName, LogRecord rec){
 		// Escreve registros no arquivo
 		file.write((char*)&rec, sizeof(LogRecord));
 		
-		// Imprime a posição atual do apontador do arquivo (representa o tamanho do arquivo)
-		file_size = file.tellg();
-    // Recupera o número de registros presentes no arquivo
-		n = file_size/sizeof(LogRecord);
-		std::cout << "Num records: " << n << " (file size: " << file_size << " bytes)" << std::endl;
-		
-    // Fecha o arquivo
+		// Fecha o arquivo
 		file.close();
 	}
 	else
@@ -88,6 +82,59 @@ void saveRecord(std::string fileName, LogRecord rec){
 		std::cout << "Error opening file!" << std::endl;
 	}
 }
+
+std::string concatenateStrings(const std::vector<std::string>& strings) {
+    std::string result;
+
+    if (!strings.empty()) {
+        result = strings[0];
+
+        for (std::size_t i = 1; i < strings.size(); i++) {
+            result += ";" + strings[i];
+        }
+    }
+
+    return result;
+}
+
+std::string readRecord(std::string fileName, int numRegisters){
+  // Abre o arquivo para leitura e escrita em modo binário e coloca o apontador do arquivo
+	// apontando para o fim de arquivo
+	std::fstream file(fileName, std::fstream::out | std::fstream::in | std::fstream::binary 
+																	 | std::fstream::app); 
+	// Caso não ocorram erros na abertura do arquivo
+	if (file.is_open())
+	{
+		// Imprime a posição atual do apontador do arquivo (representa o tamanho do arquivo)
+		int file_size = file.tellg();
+
+		// Recupera o número de registros presentes no arquivo
+		int n = file_size/sizeof(LogRecord);
+		std::cout << "Num records: " << n << " (file size: " << file_size << " bytes)" << std::endl;
+
+    // std::vector<LogRecord> records;
+    std::string convertedData = std::to_string(numRegisters);
+      
+    // Ler e armazenar os 5 primeiros registros
+    for (int i = 0; i < numRegisters; i++) {
+      // Le o registro selecionado
+      LogRecord rec;
+      // file.read(reinterpret_cast<char*>(&rec), sizeof(LogRecord));
+      file.read((char*)&rec, sizeof(LogRecord));
+      convertedData += ";" + time_t_to_string(rec.timestamp) + "|" + std::to_string(rec.value);
+      // records.push_back(rec);
+    }
+    convertedData += "\r\n";
+
+		// Fecha o arquivo
+		file.close();
+	}
+	else
+	{
+		std::cout << "Error opening file!" << std::endl;
+	}
+}
+
 
 class session
   : public std::enable_shared_from_this<session>
@@ -127,6 +174,12 @@ private:
               
               std::string filename = dataMessage[1] + ".dat";
               saveRecord(filename, dataLog);
+            }
+            else if(dataMessage[0] == GET){
+              int numRegisters = std::stoi(dataMessage[2]);
+              std::string filename = dataMessage[1] + ".dat";
+              std::string replyMessage;
+              replyMessage = readRecord(filename, numRegisters);
             }
             write_message(message);
           }
