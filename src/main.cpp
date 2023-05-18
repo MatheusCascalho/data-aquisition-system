@@ -128,11 +128,14 @@ std::string readRecord(std::string fileName, int numRegisters){
 
 		// Fecha o arquivo
 		file.close();
+
+    return convertedData;
 	}
 	else
 	{
 		std::cout << "Error opening file!" << std::endl;
 	}
+  return fileName;
 }
 
 
@@ -161,6 +164,8 @@ private:
           {
             std::istream is(&buffer_);
             std::string message(std::istreambuf_iterator<char>(is), {});
+            std::string replyMessage;
+            
             std::cout << "Received: " << message << std::endl;
 
             std::vector<std::string> dataMessage = splitString(message, delimiter);
@@ -178,10 +183,9 @@ private:
             else if(dataMessage[0] == GET){
               int numRegisters = std::stoi(dataMessage[2]);
               std::string filename = dataMessage[1] + ".dat";
-              std::string replyMessage;
               replyMessage = readRecord(filename, numRegisters);
             }
-            write_message(message);
+            write_message(replyMessage);
           }
         });
   }
